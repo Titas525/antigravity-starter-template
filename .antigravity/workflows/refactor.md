@@ -8,3 +8,5 @@
 6. Preserve public behavior.
 7. Remove obsolete code.
 8. Update documentation.
+
+9. Delete PLAN.md from project root (if it exists).

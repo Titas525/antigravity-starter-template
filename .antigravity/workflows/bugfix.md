@@ -8,4 +8,5 @@
 6. Run tests.
 7. Check for side effects.
 8. Document if behavior changed.
-9. Review diff.
+
+9. Delete PLAN.md from project root (if it exists).

@@ -29,7 +29,7 @@ Before implementing any non-trivial change:
 3. Identify dependencies and affected components.
 4. Check existing patterns before creating new ones.
 5. Identify potential regressions.
-6. Create a concise implementation plan.
+6. Create a concise implementation plan using `.antigravity/templates/PLAN.md`.
 7. For complex tasks, follow the `.antigravity/workflows/plan.md` workflow.
 
 Do not modify code blindly.
