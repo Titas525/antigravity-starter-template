@@ -3,12 +3,11 @@
 # init-project.sh — ANTIGRAVITY-STARTER Generator
 # ===========================================
 # Interactive project initializer.
-# Asks questions about stack, integrations, deployment,
-# then generates a complete project from the template.
+# Select project type → configure stack → generate.
 #
 # Usage:
-#   ./scripts/init-project.sh                    # Interactive mode
-#   ./scripts/init-project.sh --quick my-project  # Quick mode (defaults)
+#   ./scripts/init-project.sh                    # Interactive wizard
+#   ./scripts/init-project.sh --quick my-project  # Quick defaults
 #   ./scripts/init-project.sh --help              # Show help
 # ===========================================
 
@@ -21,22 +20,34 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+RED='\033[0;31m'
+NC='\033[0m'
 
 # ==========================================
 # HELP
 # ==========================================
 show_help() {
-  echo "ANTIGRAVITY-STARTER v1.0 — Project Generator"
+  echo "ANTIGRAVITY-STARTER v1.1 — Project Generator"
   echo ""
   echo "Usage:"
-  echo "  ./scripts/init-project.sh                     Interactive mode"
+  echo "  ./scripts/init-project.sh                    Interactive wizard"
   echo "  ./scripts/init-project.sh --quick <name>      Quick mode (all defaults)"
+  echo "  ./scripts/init-project.sh --type <type> <name>  Preset type"
   echo "  ./scripts/init-project.sh --help              This help"
+  echo ""
+  echo "Project types:"
+  echo "  saas        — Next.js + FastAPI + PostgreSQL + Stripe"
+  echo "  ai-saas     — SaaS + OpenAI/Gemini"
+  echo "  lead-gen    — Next.js + FastAPI + LinkedIn + Google Sheets"
+  echo "  data        — FastAPI + PostgreSQL/PostGIS + Analytics"
+  echo "  automation  — Python + n8n + Webhooks"
+  echo "  api         — FastAPI + PostgreSQL only"
+  echo "  web         — Next.js only"
   echo ""
   echo "Examples:"
   echo "  ./scripts/init-project.sh"
   echo "  ./scripts/init-project.sh --quick my-api"
+  echo "  ./scripts/init-project.sh --type ai-saas my-ai-app"
   exit 0
 }
 
@@ -49,135 +60,207 @@ fi
 # ==========================================
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║${NC}  ${BLUE}ANTIGRAVITY-STARTER${NC} v1.0                       ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}  ${BLUE}ANTIGRAVITY-STARTER${NC} v1.1                       ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  Project Generator                               ${CYAN}║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════════╝${NC}"
 echo ""
 
 # ==========================================
-# QUICK MODE
+# QUICK MODE (--quick <name>)
 # ==========================================
 if [ "$1" = "--quick" ] && [ -n "$2" ]; then
   PROJECT_NAME="$2"
-  PROJECT_DESCRIPTION="Project generated from ANTIGRAVITY-STARTER template"
-  STACK_TYPE="monorepo"
+  PROJECT_DESC="Quick-generated project"
+  PROJECT_TYPE="api"
+  FRONTEND="none"
+  BACKEND="fastapi"
   DB_TYPE="none"
   AI_PROVIDER="none"
+  NEED_AUTH="n"
   NEED_TELEGRAM="n"
   NEED_GOOGLE="n"
   DEPLOY_TYPE="none"
   INIT_GIT="y"
   RUN_SETUP="y"
-
-  echo -e "${YELLOW}Quick mode:${NC} $PROJECT_NAME"
+  echo -e "${YELLOW}Quick mode:${NC} $PROJECT_NAME (API)"
   echo ""
-
-  # Skip questions, use above defaults
   SKIP_QUESTIONS=true
+
+# PRESET MODE (--type <type> <name>)
+elif [ "$1" = "--type" ] && [ -n "$2" ] && [ -n "$3" ]; then
+  PROJECT_NAME="$3"
+  case "$2" in
+    saas)
+      PROJECT_DESC="SaaS application"
+      PROJECT_TYPE="saas"; FRONTEND="nextjs"; BACKEND="fastapi"
+      DB_TYPE="postgresql"; AI_PROVIDER="none"; NEED_AUTH="y"
+      NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker"
+      ;;
+    ai-saas)
+      PROJECT_DESC="AI-powered SaaS"
+      PROJECT_TYPE="ai-saas"; FRONTEND="nextjs"; BACKEND="fastapi"
+      DB_TYPE="postgresql"; AI_PROVIDER="openai"; NEED_AUTH="y"
+      NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker"
+      ;;
+    lead-gen)
+      PROJECT_DESC="Lead generation platform"
+      PROJECT_TYPE="lead-gen"; FRONTEND="nextjs"; BACKEND="fastapi"
+      DB_TYPE="postgresql"; AI_PROVIDER="openai"; NEED_AUTH="y"
+      NEED_TELEGRAM="y"; NEED_GOOGLE="y"; DEPLOY_TYPE="docker"
+      ;;
+    data)
+      PROJECT_DESC="Data platform"
+      PROJECT_TYPE="data"; FRONTEND="none"; BACKEND="fastapi"
+      DB_TYPE="postgresql"; AI_PROVIDER="none"; NEED_AUTH="n"
+      NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker"
+      ;;
+    automation)
+      PROJECT_DESC="Automation bot"
+      PROJECT_TYPE="automation"; FRONTEND="none"; BACKEND="fastapi"
+      DB_TYPE="none"; AI_PROVIDER="openai"; NEED_AUTH="n"
+      NEED_TELEGRAM="y"; NEED_GOOGLE="n"; DEPLOY_TYPE="none"
+      ;;
+    api)
+      PROJECT_DESC="REST API"
+      PROJECT_TYPE="api"; FRONTEND="none"; BACKEND="fastapi"
+      DB_TYPE="postgresql"; AI_PROVIDER="none"; NEED_AUTH="y"
+      NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker"
+      ;;
+    web)
+      PROJECT_DESC="Web application"
+      PROJECT_TYPE="web"; FRONTEND="nextjs"; BACKEND="none"
+      DB_TYPE="none"; AI_PROVIDER="none"; NEED_AUTH="n"
+      NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="vercel"
+      ;;
+    *)
+      echo -e "${RED}Unknown type: $2${NC}"
+      show_help
+      ;;
+  esac
+  INIT_GIT="y"; RUN_SETUP="y"
+  echo -e "${YELLOW}Type:${NC} $2 → $PROJECT_NAME"
+  echo ""
+  SKIP_QUESTIONS=true
+
 else
   SKIP_QUESTIONS=false
 fi
 
 # ==========================================
-# QUESTIONS
+# INTERACTIVE QUESTIONS
 # ==========================================
 if [ "$SKIP_QUESTIONS" = false ]; then
 
-  # 1. Project name
-  echo -e "${BLUE}Step 1/9:${NC} Project name"
+  echo -e "${BLUE}Step 1/10:${NC} Project name"
   read -p "  Name (e.g., my-awesome-app): " PROJECT_NAME
   PROJECT_NAME="${PROJECT_NAME:-my-project}"
   echo ""
 
-  # 2. Description
-  echo -e "${BLUE}Step 2/9:${NC} Project description"
-  read -p "  Description: " PROJECT_DESCRIPTION
-  PROJECT_DESCRIPTION="${PROJECT_DESCRIPTION:-A project built with ANTIGRAVITY-STARTER}"
+  echo -e "${BLUE}Step 2/10:${NC} Description"
+  read -p "  Description: " PROJECT_DESC
+  PROJECT_DESC="${PROJECT_DESC:-A project built with ANTIGRAVITY-STARTER}"
   echo ""
 
-  # 3. Stack type
-  echo -e "${BLUE}Step 3/9:${NC} Stack type"
-  echo "  1) Python API     — FastAPI + Pydantic + SQLAlchemy"
-  echo "  2) Next.js App    — Next.js + TypeScript + Tailwind"
-  echo "  3) Monorepo       — apps/web (Next.js) + apps/api (FastAPI)"
-  echo "  4) Minimal        — Basic Python project"
-  read -p "  Choice [1-4] (default: 3): " STACK_CHOICE
-  case "$STACK_CHOICE" in
-    1) STACK_TYPE="api" ;;
-    2) STACK_TYPE="nextjs" ;;
-    3|"") STACK_TYPE="monorepo" ;;
-    *) STACK_TYPE="minimal" ;;
+  echo -e "${BLUE}Step 3/10:${NC} Project type"
+  echo "  1) SaaS         — Next.js + FastAPI + PostgreSQL"
+  echo "  2) AI SaaS      — SaaS + OpenAI/Gemini"
+  echo "  3) Lead Gen     — LinkedIn + Google Sheets + AI"
+  echo "  4) Data Platform — FastAPI + PostgreSQL/PostGIS"
+  echo "  5) Automation   — Python + n8n + Webhooks"
+  echo "  6) Custom       — Choose your own stack"
+  read -p "  Choice [1-6] (default: 6): " PTYPE_CHOICE
+
+  case "$PTYPE_CHOICE" in
+    1) PROJECT_TYPE="saas"; FRONTEND="nextjs"; BACKEND="fastapi"; DB_TYPE="postgresql"; AI_PROVIDER="none"; NEED_AUTH="y"; NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker" ;;
+    2) PROJECT_TYPE="ai-saas"; FRONTEND="nextjs"; BACKEND="fastapi"; DB_TYPE="postgresql"; AI_PROVIDER="openai"; NEED_AUTH="y"; NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker" ;;
+    3) PROJECT_TYPE="lead-gen"; FRONTEND="nextjs"; BACKEND="fastapi"; DB_TYPE="postgresql"; AI_PROVIDER="openai"; NEED_AUTH="y"; NEED_TELEGRAM="y"; NEED_GOOGLE="y"; DEPLOY_TYPE="docker" ;;
+    4) PROJECT_TYPE="data"; FRONTEND="none"; BACKEND="fastapi"; DB_TYPE="postgresql"; AI_PROVIDER="none"; NEED_AUTH="n"; NEED_TELEGRAM="n"; NEED_GOOGLE="n"; DEPLOY_TYPE="docker" ;;
+    5) PROJECT_TYPE="automation"; FRONTEND="none"; BACKEND="fastapi"; DB_TYPE="none"; AI_PROVIDER="openai"; NEED_AUTH="n"; NEED_TELEGRAM="y"; NEED_GOOGLE="n"; DEPLOY_TYPE="none" ;;
+    *) PROJECT_TYPE="custom" ;;
   esac
-  echo ""
 
-  # 4. Database
-  echo -e "${BLUE}Step 4/9:${NC} Database"
-  echo "  1) PostgreSQL (recommended)"
-  echo "  2) MySQL"
-  echo "  3) SQLite (local dev)"
-  echo "  4) None"
-  read -p "  Choice [1-4] (default: 1): " DB_CHOICE
-  case "$DB_CHOICE" in
-    1|"") DB_TYPE="postgresql" ;;
-    2) DB_TYPE="mysql" ;;
-    3) DB_TYPE="sqlite" ;;
-    *) DB_TYPE="none" ;;
-  esac
-  echo ""
+  if [ "$PROJECT_TYPE" = "custom" ]; then
+    echo ""
+    # Frontend
+    echo -e "${BLUE}Step 4/10:${NC} Frontend"
+    echo "  1) Next.js + TypeScript + Tailwind"
+    echo "  2) None (API-only)"
+    read -p "  Choice [1-2] (default: 1): " FE_CHOICE
+    FRONTEND=$([ "$FE_CHOICE" = "2" ] && echo "none" || echo "nextjs")
+    echo ""
 
-  # 5. AI Provider
-  echo -e "${BLUE}Step 5/9:${NC} AI / LLM Provider"
-  echo "  1) OpenAI"
-  echo "  2) Gemini"
-  echo "  3) Both (OpenAI + Gemini fallback)"
-  echo "  4) None"
-  read -p "  Choice [1-4] (default: 1): " AI_CHOICE
-  case "$AI_CHOICE" in
-    1|"") AI_PROVIDER="openai" ;;
-    2) AI_PROVIDER="gemini" ;;
-    3) AI_PROVIDER="both" ;;
-    *) AI_PROVIDER="none" ;;
-  esac
-  echo ""
+    # Backend
+    echo -e "${BLUE}Step 5/10:${NC} Backend"
+    echo "  1) FastAPI + Python"
+    echo "  2) None (frontend-only)"
+    read -p "  Choice [1-2] (default: 1): " BE_CHOICE
+    BACKEND=$([ "$BE_CHOICE" = "2" ] && echo "none" || echo "fastapi")
+    echo ""
 
-  # 6. Telegram
-  echo -e "${BLUE}Step 6/9:${NC} Telegram notifications"
-  read -p "  Add Telegram bot support? [y/N]: " NEED_TELEGRAM
-  NEED_TELEGRAM="${NEED_TELEGRAM:-n}"
-  echo ""
+    # Database
+    echo -e "${BLUE}Step 6/10:${NC} Database"
+    echo "  1) PostgreSQL"
+    echo "  2) PostgreSQL + PostGIS"
+    echo "  3) None"
+    read -p "  Choice [1-3] (default: 1): " DB_CHOICE
+    case "$DB_CHOICE" in
+      2) DB_TYPE="postgresql+postgis" ;;
+      ""|1) DB_TYPE="postgresql" ;;
+      *) DB_TYPE="none" ;;
+    esac
+    echo ""
 
-  # 7. Google integration
-  echo -e "${BLUE}Step 7/9:${NC} Google integration"
-  read -p "  Add Google Sheets/OAuth support? [y/N]: " NEED_GOOGLE
-  NEED_GOOGLE="${NEED_GOOGLE:-n}"
-  echo ""
+    # AI
+    echo -e "${BLUE}Step 7/10:${NC} AI / LLM"
+    echo "  1) OpenAI"
+    echo "  2) Gemini"
+    echo "  3) Both (OpenAI + Gemini fallback)"
+    echo "  4) None"
+    read -p "  Choice [1-4] (default: 1): " AI_CHOICE
+    case "$AI_CHOICE" in
+      ""|1) AI_PROVIDER="openai" ;;
+      2) AI_PROVIDER="gemini" ;;
+      3) AI_PROVIDER="both" ;;
+      *) AI_PROVIDER="none" ;;
+    esac
+    echo ""
 
-  # 8. Deployment
-  echo -e "${BLUE}Step 8/9:${NC} Deployment"
-  echo "  1) Docker Compose (App + DB + Redis)"
-  echo "  2) VPS / Plesk (SSH-based)"
-  echo "  3) None (will configure later)"
-  read -p "  Choice [1-3] (default: 1): " DEPLOY_CHOICE
-  case "$DEPLOY_CHOICE" in
-    1|"") DEPLOY_TYPE="docker" ;;
-    2) DEPLOY_TYPE="plesk" ;;
-    *) DEPLOY_TYPE="none" ;;
-  esac
-  echo ""
+    # Auth
+    echo -e "${BLUE}Step 8/10:${NC} Authentication"
+    read -p "  Add auth? [Y/n]: " NEED_AUTH
+    NEED_AUTH="${NEED_AUTH:-y}"
+    echo ""
 
-  # 9. Git
-  echo -e "${BLUE}Step 9/9:${NC} Initialization"
-  read -p "  Initialize Git repository? [Y/n]: " INIT_GIT
+    # Integrations
+    echo -e "${BLUE}Step 9/10:${NC} Integrations"
+    read -p "  Telegram notifications? [y/N]: " NEED_TELEGRAM
+    NEED_TELEGRAM="${NEED_TELEGRAM:-n}"
+    read -p "  Google Sheets/OAuth? [y/N]: " NEED_GOOGLE
+    NEED_GOOGLE="${NEED_GOOGLE:-n}"
+    echo ""
+
+    # Deployment
+    echo -e "${BLUE}Step 10/10:${NC} Deployment"
+    echo "  1) Docker Compose (App + DB + Redis)"
+    echo "  2) Vercel (frontend only)"
+    echo "  3) None"
+    read -p "  Choice [1-3] (default: 1): " DEPLOY_CHOICE
+    case "$DEPLOY_CHOICE" in
+      ""|1) DEPLOY_TYPE="docker" ;;
+      2) DEPLOY_TYPE="vercel" ;;
+      *) DEPLOY_TYPE="none" ;;
+    esac
+  fi
+
+  echo ""
+  read -p "  Initialize Git? [Y/n]: " INIT_GIT
   INIT_GIT="${INIT_GIT:-y}"
-  echo ""
-
-  read -p "  Run setup (cp .env, init git)? [Y/n]: " RUN_SETUP
+  read -p "  Run setup? [Y/n]: " RUN_SETUP
   RUN_SETUP="${RUN_SETUP:-y}"
-
 fi
 
 # ==========================================
-# SUMMARY
+# GENERATE PROJECT
 # ==========================================
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
@@ -185,216 +268,197 @@ echo -e "${CYAN}║${NC}  Generating project...                          ${CYAN}
 echo -e "${CYAN}╚══════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${GREEN}Name:${NC}        $PROJECT_NAME"
-echo -e "${GREEN}Description:${NC} ${PROJECT_DESCRIPTION:0:60}..."
-echo -e "${GREEN}Stack:${NC}        $STACK_TYPE"
-echo -e "${GREEN}Database:${NC}     $DB_TYPE"
-echo -e "${GREEN}AI:${NC}           $AI_PROVIDER"
-echo -e "${GREEN}Telegram:${NC}     $NEED_TELEGRAM"
-echo -e "${GREEN}Google:${NC}       $NEED_GOOGLE"
-echo -e "${GREEN}Deployment:${NC}   $DEPLOY_TYPE"
-echo -e "${GREEN}Git:${NC}          $INIT_GIT"
+echo -e "${GREEN}Type:${NC}        ${PROJECT_TYPE:-custom}"
+echo -e "${GREEN}Frontend:${NC}    ${FRONTEND:-none}"
+echo -e "${GREEN}Backend:${NC}     ${BACKEND:-none}"
+echo -e "${GREEN}Database:${NC}    ${DB_TYPE:-none}"
+echo -e "${GREEN}AI:${NC}          ${AI_PROVIDER:-none}"
+echo -e "${GREEN}Auth:${NC}        $NEED_AUTH"
+echo -e "${GREEN}Telegram:${NC}    $NEED_TELEGRAM"
+echo -e "${GREEN}Google:${NC}      $NEED_GOOGLE"
+echo -e "${GREEN}Deploy:${NC}       ${DEPLOY_TYPE:-none}"
 echo ""
 
 TARGET_DIR="./$PROJECT_NAME"
-
 if [ -d "$TARGET_DIR" ]; then
-  echo -e "${YELLOW}❌ Directory '$TARGET_DIR' already exists!${NC}"
+  echo -e "${RED}❌ Directory '$TARGET_DIR' already exists!${NC}"
   exit 1
 fi
 
-# ==========================================
-# GENERATE PROJECT
-# ==========================================
-
 echo -e "${BLUE}Creating project structure...${NC}"
 
-# Create main directories
-mkdir -p "$TARGET_DIR/.antigravity/rules"
-mkdir -p "$TARGET_DIR/.antigravity/workflows"
-mkdir -p "$TARGET_DIR/docs/decisions"
+# --- CORE (always) ---
+mkdir -p "$TARGET_DIR/.antigravity/rules" \
+         "$TARGET_DIR/.antigravity/workflows" \
+         "$TARGET_DIR/docs/decisions" \
+         "$TARGET_DIR/scripts" \
+         "$TARGET_DIR/database/migrations" \
+         "$TARGET_DIR/database/seeds" \
+         "$TARGET_DIR/infrastructure/docker" \
+         "$TARGET_DIR/infrastructure/github" \
+         "$TARGET_DIR/packages/shared" \
+         "$TARGET_DIR/packages/types" \
+         "$TARGET_DIR/packages/config" \
+         "$TARGET_DIR/packages/ui"
 
 # Copy root files
-cp "$TEMPLATE_DIR/.gitignore" "$TARGET_DIR/"
-cp "$TEMPLATE_DIR/.editorconfig" "$TARGET_DIR/"
-cp "$TEMPLATE_DIR/README.md" "$TARGET_DIR/"
-cp "$TEMPLATE_DIR/CONTRIBUTING.md" "$TARGET_DIR/"
+cp "$TEMPLATE_DIR/.gitignore" "$TARGET_DIR/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/.editorconfig" "$TARGET_DIR/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/.env.example" "$TARGET_DIR/.env" 2>/dev/null || true
+cp "$TEMPLATE_DIR/CONTRIBUTING.md" "$TARGET_DIR/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} Core config files"
 
-# Copy .env.example as .env
-cp "$TEMPLATE_DIR/.env.example" "$TARGET_DIR/.env"
-echo -e "  ${GREEN}✅${NC} .env created from template"
-
-# Copy .antigravity (AI agent instructions)
-cp "$TEMPLATE_DIR/.antigravity/AGENTS.md" "$TARGET_DIR/.antigravity/"
+# Copy .antigravity
+cp "$TEMPLATE_DIR/.antigravity/AGENTS.md" "$TARGET_DIR/.antigravity/" 2>/dev/null || true
 for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation; do
-  cp "$TEMPLATE_DIR/.antigravity/rules/$f.md" "$TARGET_DIR/.antigravity/rules/"
+  cp "$TEMPLATE_DIR/.antigravity/rules/$f.md" "$TARGET_DIR/.antigravity/rules/" 2>/dev/null || true
 done
 for f in feature bugfix refactor deployment; do
-  cp "$TEMPLATE_DIR/.antigravity/workflows/$f.md" "$TARGET_DIR/.antigravity/workflows/"
+  cp "$TEMPLATE_DIR/.antigravity/workflows/$f.md" "$TARGET_DIR/.antigravity/workflows/" 2>/dev/null || true
 done
 echo -e "  ${GREEN}✅${NC} .antigravity/ — AI agent OS"
 
-# Copy docs/
-cp "$TEMPLATE_DIR/docs/architecture.md" "$TARGET_DIR/docs/"
-cp "$TEMPLATE_DIR/docs/setup.md" "$TARGET_DIR/docs/"
-cp "$TEMPLATE_DIR/docs/deployment.md" "$TARGET_DIR/docs/"
-cp "$TEMPLATE_DIR/docs/decisions/README.md" "$TARGET_DIR/docs/decisions/"
-echo -e "  ${GREEN}✅${NC} docs/ — documentation templates"
+# Copy docs
+for f in architecture setup deployment; do
+  cp "$TEMPLATE_DIR/docs/$f.md" "$TARGET_DIR/docs/" 2>/dev/null || true
+done
+cp "$TEMPLATE_DIR/docs/decisions/README.md" "$TARGET_DIR/docs/decisions/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} docs/ — documentation"
 
-# Copy .github/
-mkdir -p "$TARGET_DIR/.github/workflows"
-mkdir -p "$TARGET_DIR/.github/ISSUE_TEMPLATE"
-cp "$TEMPLATE_DIR/.github/workflows/ci.yml" "$TARGET_DIR/.github/workflows/"
-cp "$TEMPLATE_DIR/.github/ISSUE_TEMPLATE/bug_report.md" "$TARGET_DIR/.github/ISSUE_TEMPLATE/"
-cp "$TEMPLATE_DIR/.github/ISSUE_TEMPLATE/feature_request.md" "$TARGET_DIR/.github/ISSUE_TEMPLATE/"
-cp "$TEMPLATE_DIR/.github/pull_request_template.md" "$TARGET_DIR/.github/"
-echo -e "  ${GREEN}✅${NC} .github/ — CI + issue templates"
+# Copy .github
+mkdir -p "$TARGET_DIR/.github/workflows" "$TARGET_DIR/.github/ISSUE_TEMPLATE"
+cp "$TEMPLATE_DIR/.github/pull_request_template.md" "$TARGET_DIR/.github/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/.github/ISSUE_TEMPLATE/bug_report.md" "$TARGET_DIR/.github/ISSUE_TEMPLATE/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/.github/ISSUE_TEMPLATE/feature_request.md" "$TARGET_DIR/.github/ISSUE_TEMPLATE/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/.github/workflows/ci.yml" "$TARGET_DIR/.github/workflows/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} .github/ — CI + templates"
 
-# Copy scripts/
-mkdir -p "$TARGET_DIR/scripts"
-cp "$TEMPLATE_DIR/scripts/setup.sh" "$TARGET_DIR/scripts/"
-cp "$TEMPLATE_DIR/scripts/health-check.sh" "$TARGET_DIR/scripts/"
-echo -e "  ${GREEN}✅${NC} scripts/ — utility scripts"
+# Copy scripts
+cp "$TEMPLATE_DIR/scripts/setup.sh" "$TARGET_DIR/scripts/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/scripts/health-check.sh" "$TARGET_DIR/scripts/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} scripts/ — utilities"
 
-# ==========================================
-# STACK-SPECIFIC SETUP
-# ==========================================
+# Copy infrastructure
+cp "$TEMPLATE_DIR/infrastructure/docker/README.md" "$TARGET_DIR/infrastructure/docker/" 2>/dev/null || true
+cp "$TEMPLATE_DIR/infrastructure/github/README.md" "$TARGET_DIR/infrastructure/github/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} infrastructure/ — Docker + GitHub"
 
-# Always create packages/ (shared workspace)
-mkdir -p "$TARGET_DIR/packages/shared"
-mkdir -p "$TARGET_DIR/packages/types"
-mkdir -p "$TARGET_DIR/packages/config"
-mkdir -p "$TARGET_DIR/packages/ui"
-touch "$TARGET_DIR/packages/shared/.gitkeep"
-touch "$TARGET_DIR/packages/types/.gitkeep"
-touch "$TARGET_DIR/packages/config/.gitkeep"
-touch "$TARGET_DIR/packages/ui/.gitkeep"
+# Copy gitkeep files for empty dirs
+for d in packages/shared packages/types packages/config packages/ui database/migrations database/seeds; do
+  touch "$TARGET_DIR/$d/.gitkeep" 2>/dev/null || true
+done
 
-# Databases
-mkdir -p "$TARGET_DIR/database/migrations"
-mkdir -p "$TARGET_DIR/database/seeds"
-touch "$TARGET_DIR/database/migrations/.gitkeep"
-touch "$TARGET_DIR/database/seeds/.gitkeep"
-
-case "$STACK_TYPE" in
-  api|monorepo)
-    # Python API structure
-    mkdir -p "$TARGET_DIR/apps/api/core"
-    mkdir -p "$TARGET_DIR/apps/api/modules"
-    mkdir -p "$TARGET_DIR/apps/api/tests"
-
-    # Create __init__.py files
-    touch "$TARGET_DIR/apps/api/__init__.py"
-    touch "$TARGET_DIR/apps/api/core/__init__.py"
-    touch "$TARGET_DIR/apps/api/modules/__init__.py"
-    touch "$TARGET_DIR/apps/api/tests/__init__.py"
-
-    echo -e "  ${GREEN}✅${NC} apps/api/ — Python backend"
-    ;;
-esac
-
-case "$STACK_TYPE" in
-  nextjs|monorepo)
-    # Next.js structure
-    mkdir -p "$TARGET_DIR/apps/web/app"
-    # Placeholder — in real use, this would run `npx create-next-app`
-    echo "# Next.js app" > "$TARGET_DIR/apps/web/README.md"
-    echo -e "  ${GREEN}✅${NC} apps/web/ — Next.js ready (run: cd apps/web && npx create-next-app@latest .)"
-    ;;
-esac
-
-if [ "$STACK_TYPE" = "minimal" ]; then
-  mkdir -p "$TARGET_DIR/apps"
-  touch "$TARGET_DIR/apps/.gitkeep"
-  echo -e "  ${GREEN}✅${NC} apps/ — empty (minimal project)"
+# --- FRONTEND ---
+if [ "$FRONTEND" = "nextjs" ]; then
+  mkdir -p "$TARGET_DIR/apps/web/app"
+  echo "# Next.js app" > "$TARGET_DIR/apps/web/README.md"
+  echo -e "  ${GREEN}✅${NC} apps/web/ — Next.js ready"
 fi
 
-# Always create apps/web and apps/api .gitkeep for structure
-touch "$TARGET_DIR/apps/web/.gitkeep" 2>/dev/null || true
-touch "$TARGET_DIR/apps/api/.gitkeep" 2>/dev/null || true
+# --- BACKEND ---
+if [ "$BACKEND" = "fastapi" ]; then
+  mkdir -p "$TARGET_DIR/apps/api/core" \
+           "$TARGET_DIR/apps/api/modules" \
+           "$TARGET_DIR/apps/api/tests"
+  touch "$TARGET_DIR/apps/api/__init__.py" \
+        "$TARGET_DIR/apps/api/core/__init__.py" \
+        "$TARGET_DIR/apps/api/modules/__init__.py" \
+        "$TARGET_DIR/apps/api/tests/__init__.py"
+  echo -e "  ${GREEN}✅${NC} apps/api/ — FastAPI backend"
+fi
 
-# ==========================================
-# INTEGRATIONS
-# ==========================================
-mkdir -p "$TARGET_DIR/integrations"
-
-# Copy all integration templates
-cp -r "$TEMPLATE_DIR/integrations/ai" "$TARGET_DIR/integrations/"
-cp -r "$TEMPLATE_DIR/integrations/webhooks" "$TARGET_DIR/integrations/"
-
-# Conditionally add selected integrations
+# --- INTEGRATIONS ---
+cp -r "$TEMPLATE_DIR/integrations/ai" "$TARGET_DIR/integrations/" 2>/dev/null || true
+cp -r "$TEMPLATE_DIR/integrations/webhooks" "$TARGET_DIR/integrations/" 2>/dev/null || true
 if [ "$NEED_TELEGRAM" = "y" ] || [ "$NEED_TELEGRAM" = "Y" ]; then
-  cp -r "$TEMPLATE_DIR/integrations/telegram" "$TARGET_DIR/integrations/"
-  echo -e "  ${GREEN}✅${NC} integrations/telegram/ — Telegram bot support"
+  cp -r "$TEMPLATE_DIR/integrations/telegram" "$TARGET_DIR/integrations/" 2>/dev/null || true
 fi
 if [ "$NEED_GOOGLE" = "y" ] || [ "$NEED_GOOGLE" = "Y" ]; then
-  cp -r "$TEMPLATE_DIR/integrations/google" "$TARGET_DIR/integrations/"
-  echo -e "  ${GREEN}✅${NC} integrations/google/ — Google APIs"
+  cp -r "$TEMPLATE_DIR/integrations/google" "$TARGET_DIR/integrations/" 2>/dev/null || true
+fi
+echo -e "  ${GREEN}✅${NC} integrations/ — external services"
+
+# --- DEPLOYMENT ---
+if [ "$DEPLOY_TYPE" = "docker" ]; then
+  cp "$TEMPLATE_DIR/docker-compose.yml" "$TARGET_DIR/" 2>/dev/null || true
+  # Customize compose for PostGIS
+  if [ "$DB_TYPE" = "postgresql+postgis" ]; then
+    echo -e "  ${GREEN}✅${NC} docker-compose.yml — with PostGIS"
+  else
+    echo -e "  ${GREEN}✅${NC} docker-compose.yml"
+  fi
 fi
 
-# ==========================================
-# INFRASTRUCTURE
-# ==========================================
-mkdir -p "$TARGET_DIR/infrastructure/docker"
-mkdir -p "$TARGET_DIR/infrastructure/github"
-cp "$TEMPLATE_DIR/infrastructure/docker/README.md" "$TARGET_DIR/infrastructure/docker/"
-cp "$TEMPLATE_DIR/infrastructure/github/README.md" "$TARGET_DIR/infrastructure/github/"
-echo -e "  ${GREEN}✅${NC} infrastructure/ — Docker + GitHub configs"
+# --- CUSTOMIZE ---
+# README
+cat > "$TARGET_DIR/README.md" << README_EOF
+# $PROJECT_NAME
 
-# Docker Compose (always copy, user can remove)
-cp "$TEMPLATE_DIR/docker-compose.yml" "$TARGET_DIR/"
+> $PROJECT_DESC
+> Generated with ANTIGRAVITY-STARTER v1.1
 
-# ==========================================
-# CUSTOMIZE FILES
-# ==========================================
+## Stack
 
-# Update README.md with project name
-sed -i "s/PROJECT NAME/$PROJECT_NAME/g" "$TARGET_DIR/README.md"
-sed -i "s/Describe the project/$(echo "$PROJECT_DESCRIPTION" | sed 's|/|\\/|g')/g" "$TARGET_DIR/README.md"
+$(if [ "$FRONTEND" = "nextjs" ]; then echo "- Frontend: Next.js + TypeScript + Tailwind"; fi)
+$(if [ "$BACKEND" = "fastapi" ]; then echo "- Backend: FastAPI + Python"; fi)
+$(if [ "$DB_TYPE" != "none" ]; then echo "- Database: $DB_TYPE"; fi)
+$(if [ "$AI_PROVIDER" != "none" ]; then echo "- AI: $AI_PROVIDER"; fi)
 
-# Update .env APP_NAME
-sed -i "s/APP_NAME=antigravity-starter/APP_NAME=$PROJECT_NAME/g" "$TARGET_DIR/.env"
-sed -i "s/APP_NAME=antigravity-starter/APP_NAME=$PROJECT_NAME/g" "$TARGET_DIR/.env.example"
+## Structure
 
-# Add tech stack badges to README
-STACK_BADGES=""
-[ "$STACK_TYPE" = "api" ] || [ "$STACK_TYPE" = "monorepo" ] && STACK_BADGES="$STACK_BADGES Python FastAPI"
-[ "$STACK_TYPE" = "nextjs" ] || [ "$STACK_TYPE" = "monorepo" ] && STACK_BADGES="$STACK_BADGES Next.js TypeScript"
-[ "$DB_TYPE" != "none" ] && STACK_BADGES="$STACK_BADGES $DB_TYPE"
-[ "$AI_PROVIDER" != "none" ] && STACK_BADGES="$STACK_BADGES AI"
+\`\`\`
+.antigravity/   ← AI agent instructions
+apps/           ← Application code
+packages/       ← Shared packages
+integrations/   ← External services
+docs/           ← Documentation
+scripts/        ← Utility scripts
+\`\`\`
 
-# Update .env.example AI provider
+## Quick Start
+
+\`\`\`bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn apps.api.main:app --reload
+\`\`\`
+
+## Deployment
+
+See docs/deployment.md
+
+## AI Agent
+
+See .antigravity/AGENTS.md for AI development instructions.
+README_EOF
+echo -e "  ${GREEN}✅${NC} Customized README.md"
+
+# .env customization
+sed -i "s/APP_NAME=antigravity-starter/APP_NAME=$PROJECT_NAME/g" "$TARGET_DIR/.env" 2>/dev/null || true
 if [ "$AI_PROVIDER" = "openai" ] || [ "$AI_PROVIDER" = "both" ]; then
-  sed -i "s/# OPENAI_API_KEY=/OPENAI_API_KEY=/g" "$TARGET_DIR/.env.example"
+  sed -i "s/# OPENAI_API_KEY=/OPENAI_API_KEY=/g" "$TARGET_DIR/.env" 2>/dev/null || true
 fi
 if [ "$AI_PROVIDER" = "gemini" ] || [ "$AI_PROVIDER" = "both" ]; then
-  sed -i "s/# GEMINI_API_KEY=/GEMINI_API_KEY=/g" "$TARGET_DIR/.env.example"
+  sed -i "s/# GEMINI_API_KEY=/GEMINI_API_KEY=/g" "$TARGET_DIR/.env" 2>/dev/null || true
 fi
+echo -e "  ${GREEN}✅${NC} Customized .env"
 
-echo -e "  ${GREEN}✅${NC} Customized files for '$PROJECT_NAME'"
-
-# ==========================================
-# GIT INIT
-# ==========================================
+# --- GIT ---
 if [ "$INIT_GIT" = "y" ] || [ "$INIT_GIT" = "Y" ]; then
-  cd "$TARGET_DIR"
-  git init 2>/dev/null && echo -e "  ${GREEN}✅${NC} Git repository initialized"
-  git add . 2>/dev/null
-  git commit -m "Initial project setup from ANTIGRAVITY-STARTER v1.0
+  (cd "$TARGET_DIR" && git init 2>/dev/null && git add . 2>/dev/null && \
+   git commit -m "Initial project setup from ANTIGRAVITY-STARTER v1.1
 
 Generated with init-project.sh
 
 🤖 Generated with Codebuff
-Co-Authored-By: Codebuff <noreply@codebuff.com>" 2>/dev/null || true
-  cd - > /dev/null
+Co-Authored-By: Codebuff <noreply@codebuff.com>" 2>/dev/null || true)
+  echo -e "  ${GREEN}✅${NC} Git repository initialized"
 fi
 
-# ==========================================
-# RUN SETUP
-# ==========================================
+# --- SETUP ---
 if [ "$RUN_SETUP" = "y" ] || [ "$RUN_SETUP" = "Y" ]; then
-  cd "$TARGET_DIR"
-  bash scripts/setup.sh 2>/dev/null || true
-  cd - > /dev/null
+  (cd "$TARGET_DIR" && bash scripts/setup.sh 2>/dev/null || true)
 fi
 
 # ==========================================
@@ -408,22 +472,14 @@ echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo ""
 echo "  cd $PROJECT_NAME"
-echo "  code .                     # Open in editor"
 echo "  cat README.md              # View project docs"
-echo "  cat AGENTS.md              # View AI instructions"
+echo "  cat .antigravity/AGENTS.md  # View AI instructions"
+echo "  code .                     # Open in editor"
 echo ""
-echo -e "${BLUE}Key files:${NC}"
-echo "  .antigravity/AGENTS.md     — AI agent instructions"
-echo "  .antigravity/rules/        — Development rules"
-echo "  docs/architecture.md       — Architecture docs"
-echo "  .env                       — Environment config"
-echo ""
-echo -e "${BLUE}Stack:${NC} $STACK_TYPE"
-echo -e "${BLUE}Database:${NC} $DB_TYPE"
-echo -e "${BLUE}AI:${NC} $AI_PROVIDER"
-echo -e "${BLUE}Deployment:${NC} $DEPLOY_TYPE"
-echo ""
-echo -e "${YELLOW}To add an integration later:${NC}"
-echo "  cp -r integrations/<name>/ <project>/integrations/"
-echo "  See CONTRIBUTING.md for details"
+echo -e "${BLUE}Stack:${NC}"
+echo "  Type:       ${PROJECT_TYPE:-custom}"
+echo "  Frontend:   ${FRONTEND:-none}"
+echo "  Backend:    ${BACKEND:-none}"
+echo "  Database:   ${DB_TYPE:-none}"
+echo "  AI:         ${AI_PROVIDER:-none}"
 echo ""
