@@ -367,8 +367,6 @@ check_deps() {
 
       # Check key dependencies
       if [ -f "apps/web/package.json" ]; then
-        local dep_count
-        dep_count=$(grep -c '"@"' "apps/web/package.json" 2>/dev/null || echo 0)
         pass_msg "package.json has dependencies listed"
       fi
     else
