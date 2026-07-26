@@ -290,6 +290,7 @@ echo -e "${BLUE}Creating project structure...${NC}"
 # --- CORE (always) ---
 mkdir -p "$TARGET_DIR/.antigravity/rules" \
          "$TARGET_DIR/.antigravity/workflows" \
+         "$TARGET_DIR/.antigravity/templates" \
          "$TARGET_DIR/docs/decisions" \
          "$TARGET_DIR/scripts" \
          "$TARGET_DIR/database/migrations" \
@@ -314,6 +315,7 @@ for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation;
   cp "$TEMPLATE_DIR/.antigravity/rules/$f.md" "$TARGET_DIR/.antigravity/rules/" 2>/dev/null || true
 done
 for f in feature bugfix refactor deployment; do
+	  cp "$TEMPLATE_DIR/.antigravity/templates/PLAN.md" "$TARGET_DIR/.antigravity/templates/" 2>/dev/null || true
   cp "$TEMPLATE_DIR/.antigravity/workflows/$f.md" "$TARGET_DIR/.antigravity/workflows/" 2>/dev/null || true
 done
 echo -e "  ${GREEN}✅${NC} .antigravity/ — AI agent OS"
