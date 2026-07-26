@@ -251,7 +251,7 @@ The `.antigravity/` directory is the **system-level AI Operating System** for th
 
 ## Allowed Changes
 
-- Adding new files to `.antiggravity/rules/`, `.antigravity/workflows/`, or `.antigravity/templates/` is allowed without explicit permission.
+- Adding new files to `.antigravity/rules/`, `.antigravity/workflows/`, or `.antigravity/templates/` is allowed without explicit permission.
 - Modifying existing `.antigravity/` files **requires explicit user approval**.
 - Deleting any `.antigravity/` file **requires explicit user approval**.
 
