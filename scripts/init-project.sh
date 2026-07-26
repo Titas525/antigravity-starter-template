@@ -483,3 +483,30 @@ echo "  Backend:    ${BACKEND:-none}"
 echo "  Database:   ${DB_TYPE:-none}"
 echo "  AI:         ${AI_PROVIDER:-none}"
 echo ""
+
+# ==========================================
+# SAVE PROJECT CONFIG
+# ==========================================
+mkdir -p "$TARGET_DIR/.antigravity"
+cat > "$TARGET_DIR/.antigravity/project.config.json" << JSON_EOF
+{
+  "project": "$PROJECT_NAME",
+  "version": "1.1",
+  "generated": "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown")",
+  "type": "${PROJECT_TYPE:-custom}",
+  "stack": {
+    "frontend": "${FRONTEND:-none}",
+    "backend": "${BACKEND:-none}",
+    "database": "${DB_TYPE:-none}",
+    "ai": "${AI_PROVIDER:-none}"
+  },
+  "features": {
+    "auth": "$NEED_AUTH",
+    "telegram": "$NEED_TELEGRAM",
+    "google": "$NEED_GOOGLE"
+  },
+  "deployment": "${DEPLOY_TYPE:-none}",
+  "description": "$PROJECT_DESC"
+}
+JSON_EOF
+echo -e "  ${GREEN}✅${NC} .antigravity/project.config.json — project configuration saved"
