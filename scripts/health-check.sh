@@ -120,6 +120,7 @@ check_structure() {
 
   local antigravity_files=(
     ".antigravity/AGENTS.md"
+    ".antigravity/project-context.md"
     ".antigravity/rules/00-core.md"
     ".antigravity/rules/01-architecture.md"
     ".antigravity/rules/02-security.md"
