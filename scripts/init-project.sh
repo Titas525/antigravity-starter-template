@@ -350,11 +350,150 @@ done
 
 # --- FRONTEND ---
 if [ "$FRONTEND" = "nextjs" ]; then
-  mkdir -p "$TARGET_DIR/apps/web/app"
-  echo "# Next.js app" > "$TARGET_DIR/apps/web/README.md"
-  echo -e "  ${GREEN}✅${NC} apps/web/ — Next.js ready"
-fi
+  mkdir -p "$TARGET_DIR/apps/web/app" \
+           "$TARGET_DIR/apps/web/public" \
+           "$TARGET_DIR/apps/web/styles"
 
+  # --- package.json ---
+  cat > "$TARGET_DIR/apps/web/package.json" << 'PKGEOF'
+{
+  "name": "$PROJECT_NAME",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@tanstack/react-query": "^5.28.0",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0"
+  }
+}
+PKGEOF
+
+  # --- tsconfig.json ---
+  cat > "$TARGET_DIR/apps/web/tsconfig.json" << 'TSEOF'
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+TSEOF
+
+  # --- tailwind.config.ts ---
+  cat > "$TARGET_DIR/apps/web/tailwind.config.ts" << 'TWEOC'
+import type { Config } from "tailwindcss";
+const config: Config = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: { 50: "#eff6ff", 500: "#3b82f6", 600: "#2563eb", 700: "#1d4ed8" },
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+TWEOC
+
+  # --- postcss.config.js ---
+  cat > "$TARGET_DIR/apps/web/postcss.config.js" << 'PCEOF'
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+PCEOF
+
+  # --- globals.css ---
+  cat > "$TARGET_DIR/apps/web/app/globals.css" << 'CSSEOF'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { --foreground: #171717; --background: #ffffff; }
+@media (prefers-color-scheme: dark) {
+  :root { --foreground: #f5f5f5; --background: #0a0a0a; }
+}
+body { color: var(--foreground); background: var(--background); }
+CSSEOF
+
+  # --- layout.tsx ---
+  cat > "$TARGET_DIR/apps/web/app/layout.tsx" << 'LAYEOF'
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "$PROJECT_NAME",
+  description: "$PROJECT_DESC",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en">
+      <body className="antialiased">{children}</body>
+    </html>
+  );
+}
+LAYEOF
+
+  # --- page.tsx ---
+  cat > "$TARGET_DIR/apps/web/app/page.tsx" << 'PGEOF'
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+      <h1 className="text-4xl font-bold mb-4">$PROJECT_NAME</h1>
+      <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md text-center">
+        $PROJECT_DESC
+      </p>
+      <div className="mt-8">
+        <a href="/api/health" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          API Health
+        </a>
+      </div>
+    </main>
+  );
+}
+PGEOF
+
+  echo -e "  ${GREEN}${NC} apps/web/ - Next.js + TypeScript + Tailwind (templates generated)"
+fi
 # --- BACKEND ---
 if [ "$BACKEND" = "fastapi" ]; then
   mkdir -p "$TARGET_DIR/apps/api/core" \
@@ -364,9 +503,135 @@ if [ "$BACKEND" = "fastapi" ]; then
         "$TARGET_DIR/apps/api/core/__init__.py" \
         "$TARGET_DIR/apps/api/modules/__init__.py" \
         "$TARGET_DIR/apps/api/tests/__init__.py"
-  echo -e "  ${GREEN}✅${NC} apps/api/ — FastAPI backend"
-fi
 
+  # --- requirements.txt (conditional) ---
+  cat > "$TARGET_DIR/apps/api/requirements.txt" << 'REQEOF'
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+sqlalchemy[asyncio]>=2.0.25
+asyncpg>=0.29.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+alembic>=1.13.0
+httpx>=0.26.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+$(if [ "$AI_PROVIDER" = "openai" ] || [ "$AI_PROVIDER" = "both" ]; then echo "openai>=1.12.0"; fi)
+$(if [ "$AI_PROVIDER" = "gemini" ] || [ "$AI_PROVIDER" = "both" ]; then echo "google-genai>=1.0.0"; fi)
+$(if [ "$NEED_AUTH" = "y" ] || [ "$NEED_AUTH" = "Y" ]; then echo "python-jose[cryptography]>=3.3.0"; fi)
+$(if [ "$NEED_AUTH" = "y" ] || [ "$NEED_AUTH" = "Y" ]; then echo "passlib[bcrypt]>=1.7.4"; fi)
+REQEOF
+
+  # --- config.py ---
+  cat > "$TARGET_DIR/apps/api/core/config.py" << 'CFGEOF'
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+class Settings(BaseSettings):
+    app_name: str = "$PROJECT_NAME"
+    app_version: str = "0.1.0"
+    debug: bool = True
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/$PROJECT_NAME"
+$(if [ "$NEED_AUTH" = "y" ] || [ "$NEED_AUTH" = "Y" ]; then echo '
+    auth_secret: str = "change-me-to-a-random-secret"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_hours: int = 24'; fi)
+$(if [ "$AI_PROVIDER" = "openai" ] || [ "$AI_PROVIDER" = "both" ]; then echo '
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o-mini"'; fi)
+$(if [ "$AI_PROVIDER" = "gemini" ] || [ "$AI_PROVIDER" = "both" ]; then echo '
+    gemini_api_key: Optional[str] = None
+    gemini_model: str = "gemini-2.0-flash"'; fi)
+    cors_origins: list[str] = ["http://localhost:3000"]
+    model_config = {"env_file": ".env", "extra": "ignore"}
+
+settings = Settings()
+CFGEOF
+
+  # --- database.py ---
+  cat > "$TARGET_DIR/apps/api/core/database.py" << 'DBEOF'
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+from core.config import settings
+
+engine = create_async_engine(settings.database_url, echo=settings.debug)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+class Base(DeclarativeBase):
+    pass
+
+async def get_db():
+    async with async_session() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+DBEOF
+
+  # --- logger.py ---
+  cat > "$TARGET_DIR/apps/api/core/logger.py" << 'LOGEOF'
+import logging
+import sys
+
+def setup_logger(name: str = "$PROJECT_NAME") -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ))
+        logger.addHandler(handler)
+    return logger
+
+logger = setup_logger()
+LOGEOF
+
+  # --- main.py ---
+  cat > "$TARGET_DIR/apps/api/main.py" << 'MAINEOF'
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from core.config import settings
+from core.logger import logger
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting %s v%s", settings.app_name, settings.app_version)
+    yield
+    logger.info("Shutting down %s", settings.app_name)
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "version": settings.app_version}
+
+@app.get("/api/")
+async def root():
+    return {"message": f"{settings.app_name} API is running"}
+MAINEOF
+
+  echo -e "  ${GREEN}${NC} apps/api/ - FastAPI backend (templates generated)"
+fi
 # --- INTEGRATIONS ---
 cp -r "$TEMPLATE_DIR/integrations/ai" "$TARGET_DIR/integrations/" 2>/dev/null || true
 cp -r "$TEMPLATE_DIR/integrations/webhooks" "$TARGET_DIR/integrations/" 2>/dev/null || true
@@ -416,13 +681,18 @@ scripts/        ← Utility scripts
 \`\`\`
 
 ## Quick Start
-
-\`\`\`bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn apps.api.main:app --reload
-\`\`\`
+```bash
+  $(if [ "$BACKEND" = "fastapi" ]; then echo "# Backend
+  cd apps/api
+  python -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  uvicorn main:app --reload"; fi)
+  $(if [ "$FRONTEND" = "nextjs" ]; then echo "
+  # Frontend
+  cd apps/web
+  npm install
+  npm run dev"; fi)```
 
 ## Deployment
 
