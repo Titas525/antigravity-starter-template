@@ -233,3 +233,28 @@ A task is complete when:
 - Documentation is updated where necessary.
 - Environment variables are documented.
 - The change is ready for review.
+
+---
+
+# 14. .antigravity DIRECTORY PROTECTION
+
+The `.antigravity/` directory is the **system-level AI Operating System** for this project.
+
+## Rules
+
+- Never delete or modify `.antigravity/AGENTS.md` — it defines how you operate.
+- Never delete or modify `.antigravity/rules/` — they define coding standards and constraints.
+- Never delete or modify `.antigravity/workflows/` — they define development processes.
+- Never delete `.antigravity/project.config.json` — it stores project configuration.
+- Never delete `.antigravity/project-context.md` — it stores project context for AI agents.
+- Never delete `.antigravity/templates/` — they store reusable templates for plans and documents.
+
+## Allowed Changes
+
+- Adding new files to `.antiggravity/rules/`, `.antigravity/workflows/`, or `.antigravity/templates/` is allowed without explicit permission.
+- Modifying existing `.antigravity/` files **requires explicit user approval**.
+- Deleting any `.antigravity/` file **requires explicit user approval**.
+
+## Why
+
+The `.antigravity/` directory was designed to survive across agent sessions. It is the persistent memory and operating manual for every AI agent working on this project. Losing or corrupting these files means losing project context.
