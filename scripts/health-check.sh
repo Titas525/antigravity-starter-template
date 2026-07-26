@@ -125,7 +125,8 @@ check_structure() {
     ".antigravity/rules/02-security.md"
     ".antigravity/rules/03-git.md"
     ".antigravity/rules/04-testing.md"
-    ".antigravity/rules/05-documentation.md"
+    ".antigravity/rules/05-documentation",
+    ".antigravity/rules/06-constraints.md"
     ".antigravity/workflows/feature.md"
     ".antigravity/workflows/bugfix.md"
     ".antigravity/workflows/refactor.md"

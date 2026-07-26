@@ -311,7 +311,7 @@ echo -e "  ${GREEN}✅${NC} Core config files"
 
 # Copy .antigravity
 cp "$TEMPLATE_DIR/.antigravity/AGENTS.md" "$TARGET_DIR/.antigravity/" 2>/dev/null || true
-for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation; do
+for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation 06-constraints; do
   cp "$TEMPLATE_DIR/.antigravity/rules/$f.md" "$TARGET_DIR/.antigravity/rules/" 2>/dev/null || true
 done
 for f in feature bugfix refactor deployment; do
