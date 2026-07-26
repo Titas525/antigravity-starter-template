@@ -355,7 +355,7 @@ if [ "$FRONTEND" = "nextjs" ]; then
            "$TARGET_DIR/apps/web/styles"
 
   # --- package.json ---
-  cat > "$TARGET_DIR/apps/web/package.json" << 'PKGEOF'
+  cat > "$TARGET_DIR/apps/web/package.json" << PKGEOF
 {
   "name": "$PROJECT_NAME",
   "version": "0.1.0",
@@ -388,7 +388,7 @@ if [ "$FRONTEND" = "nextjs" ]; then
 PKGEOF
 
   # --- tsconfig.json ---
-  cat > "$TARGET_DIR/apps/web/tsconfig.json" << 'TSEOF'
+  cat > "$TARGET_DIR/apps/web/tsconfig.json" << TSEOF
 {
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -412,7 +412,7 @@ PKGEOF
 TSEOF
 
   # --- tailwind.config.ts ---
-  cat > "$TARGET_DIR/apps/web/tailwind.config.ts" << 'TWEOC'
+  cat > "$TARGET_DIR/apps/web/tailwind.config.ts" << TWEOC
 import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
@@ -433,7 +433,7 @@ export default config;
 TWEOC
 
   # --- postcss.config.js ---
-  cat > "$TARGET_DIR/apps/web/postcss.config.js" << 'PCEOF'
+  cat > "$TARGET_DIR/apps/web/postcss.config.js" << PCEOF
 module.exports = {
   plugins: {
     tailwindcss: {},
@@ -443,7 +443,7 @@ module.exports = {
 PCEOF
 
   # --- globals.css ---
-  cat > "$TARGET_DIR/apps/web/app/globals.css" << 'CSSEOF'
+  cat > "$TARGET_DIR/apps/web/app/globals.css" << CSSEOF
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -455,7 +455,7 @@ body { color: var(--foreground); background: var(--background); }
 CSSEOF
 
   # --- layout.tsx ---
-  cat > "$TARGET_DIR/apps/web/app/layout.tsx" << 'LAYEOF'
+  cat > "$TARGET_DIR/apps/web/app/layout.tsx" << LAYEOF
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -474,7 +474,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 LAYEOF
 
   # --- page.tsx ---
-  cat > "$TARGET_DIR/apps/web/app/page.tsx" << 'PGEOF'
+  cat > "$TARGET_DIR/apps/web/app/page.tsx" << PGEOF
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
@@ -505,7 +505,7 @@ if [ "$BACKEND" = "fastapi" ]; then
         "$TARGET_DIR/apps/api/tests/__init__.py"
 
   # --- requirements.txt (conditional) ---
-  cat > "$TARGET_DIR/apps/api/requirements.txt" << 'REQEOF'
+  cat > "$TARGET_DIR/apps/api/requirements.txt" << REQEOF
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 sqlalchemy[asyncio]>=2.0.25
@@ -524,7 +524,7 @@ $(if [ "$NEED_AUTH" = "y" ] || [ "$NEED_AUTH" = "Y" ]; then echo "passlib[bcrypt
 REQEOF
 
   # --- config.py ---
-  cat > "$TARGET_DIR/apps/api/core/config.py" << 'CFGEOF'
+  cat > "$TARGET_DIR/apps/api/core/config.py" << CFGEOF
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -550,7 +550,7 @@ settings = Settings()
 CFGEOF
 
   # --- database.py ---
-  cat > "$TARGET_DIR/apps/api/core/database.py" << 'DBEOF'
+  cat > "$TARGET_DIR/apps/api/core/database.py" << DBEOF
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from core.config import settings
@@ -574,7 +574,7 @@ async def init_db():
 DBEOF
 
   # --- logger.py ---
-  cat > "$TARGET_DIR/apps/api/core/logger.py" << 'LOGEOF'
+  cat > "$TARGET_DIR/apps/api/core/logger.py" << LOGEOF
 import logging
 import sys
 
@@ -594,7 +594,7 @@ logger = setup_logger()
 LOGEOF
 
   # --- main.py ---
-  cat > "$TARGET_DIR/apps/api/main.py" << 'MAINEOF'
+  cat > "$TARGET_DIR/apps/api/main.py" << MAINEOF
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
