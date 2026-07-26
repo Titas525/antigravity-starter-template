@@ -8,5 +8,6 @@
 6. Add or update tests.
 7. Run validation.
 8. Update documentation.
-9. Review diff.
-10. Prepare commit.
+9. Delete PLAN.md from project root (if it exists).
+10. Review diff.
+11. Prepare commit.

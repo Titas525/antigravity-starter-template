@@ -315,10 +315,11 @@ for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation;
   cp "$TEMPLATE_DIR/.antigravity/rules/$f.md" "$TARGET_DIR/.antigravity/rules/" 2>/dev/null || true
 done
 for f in feature bugfix refactor deployment; do
-	  cp "$TEMPLATE_DIR/.antigravity/templates/PLAN.md" "$TARGET_DIR/.antigravity/templates/" 2>/dev/null || true
   cp "$TEMPLATE_DIR/.antigravity/workflows/$f.md" "$TARGET_DIR/.antigravity/workflows/" 2>/dev/null || true
 done
-echo -e "  ${GREEN}✅${NC} .antigravity/ — AI agent OS"
+	  cp "$TEMPLATE_DIR/.antigravity/templates/PLAN.md" "$TARGET_DIR/.antigravity/templates/" 2>/dev/null || true
+	  cp "$TEMPLATE_DIR/.antigravity/workflows/plan.md" "$TARGET_DIR/.antigravity/workflows/" 2>/dev/null || true
+echo -e "  ${GREEN}✅${NC} .antigravity/ — AI agent OS + templates"
 
 # Copy docs
 for f in architecture setup deployment; do
