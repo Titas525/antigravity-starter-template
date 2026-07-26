@@ -1,87 +1,57 @@
-# PROJECT NAME
+# ANTIGRAVITY-STARTER
 
-> Built with ANTIGRAVITY STARTER TEMPLATE v1.0
+> **v1.0 — CORE** — Universal modular project template.
+> AI agent instructions, development rules, Git workflow, CI/CD, integrations framework.
 
 ## Overview
 
-Describe the project.
-
-## Tech Stack
-
-- Frontend:
-- Backend:
-- Database:
-- AI:
-- Infrastructure:
+Central template for all ANTIGRAVITY projects. Every new project starts from here.
 
 ## Project Structure
 
 ```text
-apps/           — Application code
-packages/       — Shared packages
-database/       — Migrations and seeds
-integrations/   — External service integrations
-infrastructure/ — Docker, CI/CD configs
-docs/           — Documentation
-scripts/        — Utility scripts
-.antigravity/   — AI agent instructions
+.antigravity/     ← AI agent OS (AGENTS.md, rules, workflows)
+apps/             ← Application code (web/ + api/)
+packages/         ← Shared packages (shared, types, config, ui)
+database/         ← Migrations and seeds
+integrations/     ← External service integrations (AI, Google, Telegram, webhooks)
+infrastructure/   ← Docker, GitHub configs
+docs/             ← Documentation
+scripts/          ← Utility scripts (init-project, setup, health-check)
+.github/          ← CI, issue templates, PR templates
 ```
 
-## Requirements
+## Roadmap
 
-- Node.js:
-- Python:
-- Docker:
-- PostgreSQL:
+```
+v1.0 — CORE        ✅ AI rules, Git, Security, Testing, Docs, CI/CD
+v1.1 — TECH STACK  ⏳ Next.js, FastAPI, PostgreSQL, Docker, GitHub Actions
+v1.2 — AI          ⏳ OpenAI, Gemini, LLM abstraction, prompt management
+v1.3 — INTEGRATIONS ⏳ Google APIs, Telegram, Webhooks, n8n, Make
+v2.0 — GENERATOR   ⏳ Project type selection → automated scaffolding
+```
 
-## Installation
-
-Clone the repository:
+## Quick Start
 
 ```bash
-git clone <repository-url>
-cd <project-directory>
-
-# Run setup
-./scripts/setup.sh
+# Use this template from GitHub → "Use this template" button
+# Or clone and init locally:
+./scripts/init-project.sh
+# Or quick:
+./scripts/init-project.sh --quick my-project
 ```
 
-## Environment
+## Project Types (v2.0 vision)
 
-Copy:
+Each new project selects a type, and the template generates the appropriate structure:
 
-```bash
-cp .env.example .env
-```
+- **SaaS** — Next.js + FastAPI + PostgreSQL + Stripe
+- **AI SaaS** — + OpenAI/Gemini
+- **Lead Generation** — + LinkedIn + Google Sheets
+- **Data Platform** — + PostgreSQL/PostGIS + Analytics
+- **Automation** — + n8n + Webhooks
 
-Configure required environment variables.
+---
 
-## Development
-
-Start the development environment.
-
-## Testing
-
-Run tests.
-
-## Deployment
-
-See:
-
-docs/deployment.md
-
-## Architecture
-
-See:
-
-docs/architecture.md
-
-## AI Development
-
-Project AI instructions are located in:
-
-.antigravity/
-
-## License
-
-Specify license.
+*See CONTRIBUTING.md for adding integrations.*
+*See .antigravity/ for AI agent instructions.*
