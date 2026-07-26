@@ -30,6 +30,7 @@ Before implementing any non-trivial change:
 4. Check existing patterns before creating new ones.
 5. Identify potential regressions.
 6. Create a concise implementation plan using `.antigravity/templates/PLAN.md`.
+8. Read and follow `.antigravity/rules/06-constraints.md` before writing code.
 7. For complex tasks, follow the `.antigravity/workflows/plan.md` workflow.
 
 Do not modify code blindly.
