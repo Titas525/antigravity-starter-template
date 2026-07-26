@@ -31,6 +31,7 @@ Before implementing any non-trivial change:
 5. Identify potential regressions.
 6. Create a concise implementation plan using `.antigravity/templates/PLAN.md`.
 8. Read and follow `.antigravity/rules/06-constraints.md` before writing code.
+9. Read `.antigravity/project-context.md` for complete project context.
 7. For complex tasks, follow the `.antigravity/workflows/plan.md` workflow.
 
 Do not modify code blindly.
