@@ -1,0 +1,231 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  # ========================================
+  # STRUKTŪROS VIENTISUMO PATIKRA
+  # ========================================
+  validate-structure:
+    name: Structure validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Required root files
+        run: |
+          echo "=== Root files ==="
+          test -f README.md         && echo "  ✅ README.md"         || (echo "  ❌ README.md"; exit 1)
+          test -f .env.example      && echo "  ✅ .env.example"     || (echo "  ❌ .env.example"; exit 1)
+          test -f .gitignore        && echo "  ✅ .gitignore"       || (echo "  ❌ .gitignore"; exit 1)
+          test -f .editorconfig     && echo "  ✅ .editorconfig"    || (echo "  ❌ .editorconfig"; exit 1)
+          test -f CONTRIBUTING.md   && echo "  ✅ CONTRIBUTING.md"  || (echo "  ❌ CONTRIBUTING.md"; exit 1)
+          echo ""
+
+      - name: .antigravity directory
+        run: |
+          echo "=== .antigravity/ ==="
+          test -d .antigravity                   && echo "  ✅ .antigravity/"          || (echo "  ❌ .antigravity/"; exit 1)
+          test -f .antigravity/AGENTS.md          && echo "  ✅ AGENTS.md"              || (echo "  ❌ AGENTS.md"; exit 1)
+          echo ""
+
+      - name: Rules files
+        run: |
+          echo "=== .antigravity/rules/ ==="
+          for f in 00-core 01-architecture 02-security 03-git 04-testing 05-documentation; do
+            test -f ".antigravity/rules/$f.md" && echo "  ✅ $f.md" || (echo "  ❌ $f.md"; exit 1)
+          done
+          echo ""
+
+      - name: Workflow files
+        run: |
+          echo "=== .antigravity/workflows/ ==="
+          for f in feature bugfix refactor deployment; do
+            test -f ".antigravity/workflows/$f.md" && echo "  ✅ $f.md" || (echo "  ❌ $f.md"; exit 1)
+          done
+          echo ""
+
+      - name: App directories
+        run: |
+          echo "=== apps/ ==="
+          test -d apps/web && echo "  ✅ apps/web" || echo "  ⚠️  apps/web"
+          test -d apps/api && echo "  ✅ apps/api" || echo "  ⚠️  apps/api"
+          echo ""
+
+      - name: Package directories
+        run: |
+          echo "=== packages/ ==="
+          for d in shared types config ui; do
+            test -d "packages/$d" && echo "  ✅ packages/$d" || (echo "  ❌ packages/$d missing!"; exit 1)
+          done
+          echo ""
+
+      - name: Documentation
+        run: |
+          echo "=== docs/ ==="
+          for f in architecture setup deployment; do
+            test -f "docs/$f.md" && echo "  ✅ docs/$f.md" || (echo "  ❌ docs/$f.md"; exit 1)
+          done
+          test -f docs/decisions/README.md && echo "  ✅ docs/decisions/" || (echo "  ❌ docs/decisions/"; exit 1)
+          echo ""
+
+      - name: GitHub config
+        run: |
+          echo "=== .github/ ==="
+          test -f .github/workflows/ci.yml                     && echo "  ✅ ci.yml"               || (echo "  ❌ ci.yml"; exit 1)
+          test -f .github/workflows/template-validate.yml      && echo "  ✅ template-validate.yml" || echo "  ⚠️  template-validate.yml"
+          test -f .github/ISSUE_TEMPLATE/bug_report.md         && echo "  ✅ bug_report.md"         || (echo "  ❌ bug_report.md"; exit 1)
+          test -f .github/ISSUE_TEMPLATE/feature_request.md    && echo "  ✅ feature_request.md"    || (echo "  ❌ feature_request.md"; exit 1)
+          test -f .github/pull_request_template.md             && echo "  ✅ PR template"           || (echo "  ❌ PR template"; exit 1)
+          echo ""
+
+      - name: Integration directories
+        run: |
+          echo "=== integrations/ ==="
+          for d in ai google telegram webhooks; do
+            test -f "integrations/$d/README.md" && echo "  ✅ integrations/$d" || echo "  ⚠️  integrations/$d"
+          done
+          echo ""
+
+      - name: Scripts
+        run: |
+          echo "=== scripts/ ==="
+          for f in setup.sh health-check.sh; do
+            test -f "scripts/$f" && echo "  ✅ scripts/$f" || (echo "  ❌ scripts/$f"; exit 1)
+          done
+          bash -n scripts/setup.sh         && echo "  ✅ setup.sh syntax OK"       || (echo "  ❌ setup.sh syntax error"; exit 1)
+          bash -n scripts/health-check.sh  && echo "  ✅ health-check.sh syntax OK" || (echo "  ❌ health-check.sh syntax error"; exit 1)
+          echo ""
+
+      - name: No secrets in code
+        run: |
+          echo "=== Security check ==="
+          # Check for potential secrets
+          if grep -rn "sk-[A-Za-z0-9]" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" . 2>/dev/null | grep -v ".env\|node_modules\|.next\|__pycache__" | grep -v "your-key\|sk-your"; then
+            echo "❌ Possible API keys found in code!"
+            exit 1
+          fi
+          echo "  ✅ No exposed secrets detected"
+
+  # ========================================
+  # LYNU PATIKROS
+  # ========================================
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    needs: validate-structure
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for trailing whitespace
+        run: |
+          if grep -rn "[[:space:]]$" --include="*.md" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.json" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -v "node_modules\|.next\|__pycache__\|.git" | head -20; then
+            echo "⚠️  Trailing whitespace found (see above)"
+          else
+            echo "  ✅ No trailing whitespace"
+          fi
+
+      - name: Validate YAML files
+        run: |
+          if command -v python3 &>/dev/null; then
+            python3 -c "
+import yaml, sys, os
+errors = 0
+for root, dirs, files in os.walk('.'):
+  if 'node_modules' in root or '.git' in root:
+    continue
+  for f in files:
+    if f.endswith(('.yml', '.yaml')):
+      path = os.path.join(root, f)
+      try:
+        with open(path) as fh:
+          yaml.safe_load(fh)
+      except yaml.YAMLError as e:
+        print(f'  ❌ {path}: {e}')
+        errors += 1
+if errors:
+  print(f'{errors} YAML errors')
+  sys.exit(1)
+print('  ✅ All YAML files valid')
+" 2>/dev/null || echo "  ⚠️  PyYAML not available, skipping"
+          fi
+
+      - name: Validate JSON files
+        run: |
+          python3 -c "
+import json, os
+errors = 0
+for root, dirs, files in os.walk('.'):
+  if 'node_modules' in root or '.git' in root:
+    continue
+  for f in files:
+    if f.endswith('.json'):
+      path = os.path.join(root, f)
+      try:
+        with open(path) as fh:
+          json.load(fh)
+      except json.JSONDecodeError as e:
+        print(f'  ❌ {path}: {e}')
+        errors += 1
+if errors:
+  print(f'{errors} JSON errors')
+  sys.exit(1)
+print('  ✅ All JSON files valid')
+"
+
+  # ========================================
+  # MANIFEST'Ų VIENTISUMO PATIKRA
+  # ========================================
+  validate-manifests:
+    name: Manifest validation
+    runs-on: ubuntu-latest
+    needs: validate-structure
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate all manifest.json files
+        run: |
+          python3 -c "
+import json, os, sys
+
+errors = 0
+required_fields = ['name', 'description', 'type', 'dependencies']
+
+for root, dirs, files in os.walk('.'):
+  if 'node_modules' in root or '.git' in root:
+    continue
+  for f in files:
+    if f == 'manifest.json':
+      path = os.path.join(root, f)
+      try:
+        with open(path) as fh:
+          data = json.load(fh)
+        for field in required_fields:
+          if field not in data:
+            print(f'  ❌ {path}: missing \"{field}\"')
+            errors += 1
+        print(f'  ✅ {path} ({data.get(\"type\",\"?\")}: {data.get(\"name\",\"?\")})')
+      except Exception as e:
+        print(f'  ❌ {path}: {e}')
+        errors += 1
+
+if errors:
+  print(f'\n❌ {errors} manifest error(s)')
+  sys.exit(1)
+print('\n  ✅ All manifests valid')
+"

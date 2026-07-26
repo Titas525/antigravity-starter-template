@@ -1,0 +1,248 @@
+name: Template Structure Validation
+
+on:
+  # Paleidžiamas rankiniu būdu
+  workflow_dispatch:
+
+  # Paleidžiamas kai keičiasi šablono struktūra
+  pull_request:
+    paths:
+      - '.antigravity/**'
+      - 'apps/**'
+      - 'packages/**'
+      - 'integrations/**'
+      - 'infrastructure/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - '.github/**'
+      - '*.md'
+      - '*.yml'
+      - '*.example'
+
+jobs:
+  # ========================================
+  # IŠSAMI STRUKTŪROS ANALIZĖ
+  # ========================================
+  analyze:
+    name: Structural analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate structure report
+        run: |
+          echo "# Template Structure Report" > structure-report.md
+          echo "" >> structure-report.md
+          echo "## Directory Tree" >> structure-report.md
+          echo '```' >> structure-report.md
+          find . -maxdepth 3 -type d \
+            -not -path './.git/*' \
+            -not -path './node_modules/*' \
+            -not -path './.next/*' \
+            -not -path './__pycache__/*' \
+            | sort >> structure-report.md
+          echo '```' >> structure-report.md
+          echo "" >> structure-report.md
+
+          echo "## File Count by Category" >> structure-report.md
+          echo "" >> structure-report.md
+          echo "| Category | Count |" >> structure-report.md
+          echo "|----------|-------|" >> structure-report.md
+          echo "| Root files | $(find . -maxdepth 1 -type f | wc -l) |" >> structure-report.md
+          echo "| .antigravity/ | $(find .antigravity -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| apps/ | $(find apps -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| packages/ | $(find packages -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| docs/ | $(find docs -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| integrations/ | $(find integrations -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| infrastructure/ | $(find infrastructure -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| scripts/ | $(find scripts -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "| .github/ | $(find .github -type f 2>/dev/null | wc -l) |" >> structure-report.md
+          echo "" >> structure-report.md
+
+          cat structure-report.md
+
+      - name: Upload structure report
+        uses: actions/upload-artifact@v4
+        with:
+          name: structure-report
+          path: structure-report.md
+
+  # ========================================
+  # VIENTISUMO TESTAI
+  # ========================================
+  integrity:
+    name: Integrity checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run health-check script
+        run: |
+          chmod +x scripts/health-check.sh
+          ./scripts/health-check.sh
+
+      - name: Verify all required files exist
+        run: |
+          errors=0
+          # Core files that MUST exist
+          required_files=(
+            "README.md"
+            ".env.example"
+            ".gitignore"
+            ".editorconfig"
+            "CONTRIBUTING.md"
+            "docker-compose.yml"
+            ".antigravity/AGENTS.md"
+            ".antigravity/rules/00-core.md"
+            ".antigravity/rules/01-architecture.md"
+            ".antigravity/rules/02-security.md"
+            ".antigravity/rules/03-git.md"
+            ".antigravity/rules/04-testing.md"
+            ".antigravity/rules/05-documentation.md"
+            ".antigravity/workflows/feature.md"
+            ".antigravity/workflows/bugfix.md"
+            ".antigravity/workflows/refactor.md"
+            ".antigravity/workflows/deployment.md"
+            "docs/architecture.md"
+            "docs/setup.md"
+            "docs/deployment.md"
+            "docs/decisions/README.md"
+            ".github/workflows/ci.yml"
+            ".github/pull_request_template.md"
+            "scripts/setup.sh"
+            "scripts/health-check.sh"
+          )
+
+          for f in "${required_files[@]}"; do
+            if [ -f "$f" ]; then
+              echo "  ✅ $f"
+            else
+              echo "  ❌ $f (missing!)"
+              errors=$((errors + 1))
+            fi
+          done
+
+          # Required directories
+          required_dirs=(
+            ".antigravity/rules"
+            ".antigravity/workflows"
+            "apps/web"
+            "apps/api"
+            "packages/shared"
+            "packages/types"
+            "packages/config"
+            "packages/ui"
+            "docs/decisions"
+            "integrations"
+            "infrastructure/docker"
+            "infrastructure/github"
+            ".github/workflows"
+            ".github/ISSUE_TEMPLATE"
+          )
+
+          for d in "${required_dirs[@]}"; do
+            if [ -d "$d" ]; then
+              echo "  ✅ $d/"
+            else
+              echo "  ❌ $d/ (missing!)"
+              errors=$((errors + 1))
+            fi
+          done
+
+          echo ""
+          if [ $errors -eq 0 ]; then
+            echo "✅ All integrity checks passed!"
+          else
+            echo "❌ $errors check(s) failed"
+            exit 1
+          fi
+
+      - name: Verify no .env committed
+        run: |
+          if [ -f ".env" ]; then
+            echo "❌ .env file found in repository! It should be gitignored."
+            exit 1
+          fi
+          echo "  ✅ No .env committed"
+
+  # ========================================
+  # INTEGRACIJŲ VIENTISUMAS
+  # ========================================
+  integrations:
+    name: Integration validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check integration directories
+        run: |
+          errors=0
+          for dir in integrations/*/; do
+            name=$(basename "$dir")
+            echo "=== $name ==="
+            # Each integration MUST have a README.md
+            if [ -f "${dir}README.md" ]; then
+              echo "  ✅ README.md"
+            else
+              echo "  ❌ Missing README.md"
+              errors=$((errors + 1))
+            fi
+            # Should have a manifest if it has code
+            if [ -f "${dir}manifest.json" ]; then
+              echo "  ✅ manifest.json"
+            fi
+            echo ""
+          done
+
+          # Infrastructure validation
+          echo "=== infrastructure/docker ==="
+          for f in README.md Dockerfile docker-compose.yml; do
+            if [ -f "infrastructure/docker/$f" ]; then
+              echo "  ✅ $f"
+            else
+              echo "  ⚠️  $f (optional)"
+            fi
+          done
+
+          echo ""
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors integration error(s)"
+            exit 1
+          fi
+          echo "✅ All integrations valid"
+
+  # ========================================
+  # SKRIPTŲ SINTAKSĖ
+  # ========================================
+  scripts:
+    name: Script syntax check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate bash scripts
+        run: |
+          errors=0
+          for f in scripts/*.sh; do
+            if [ -f "$f" ]; then
+              if bash -n "$f" 2>/dev/null; then
+                echo "  ✅ $f"
+              else
+                echo "  ❌ $f (syntax error)"
+                errors=$((errors + 1))
+              fi
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors script(s) with syntax errors"
+            exit 1
+          fi
+          echo "✅ All scripts valid"
